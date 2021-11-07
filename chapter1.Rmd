@@ -1,7 +1,15 @@
+## Chapter 1 - Brief introduction
 
-# About the project
+I am a PhD student from UEF who who has *some* experience with Github and is quite familiar with R. Mostly self taught so participating to unlearn bad habits and to learn actual good practice with project managing and statistics.
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
+## Things  I expect to learn
+* Basics of version control and Github usage with R
+* Good practices with R and Rstudio
+ 
+### Links
+**_[Link to my Github](https://github.com/juhomon/IODS-project)_**
+
+**_[Link to the web page](https://juhomon.github.io/IODS-project/)_**
 
 ```{r}
 # This is a so-called "R chunk" where you can write R code.
