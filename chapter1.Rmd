@@ -1,16 +1,21 @@
-## Chapter 1 - Brief introduction
+# Chapter 1 - Introduction to IODS course project
+
+## Brief introduction
 
 Hello, I am Juho Mononen, a PhD student from UEF who who has *some* experience with Github and is quite familiar with R and Rstudio. Currently dappling in bioinformatics with a main focus of identifying regulatory sites affected by genetic variation. I am mostly self taught in programming, so participating to unlearn potentially bad habits and to learn better practices with project managing and statistics. 
 
 A friend introduced me to this course.
 
-## Things  I expect to learn
+## Things  I expect to learn:
 * Basics of version control and Github usage with R
 * Good practices with R and Rstudio
  
-### Links
+## Links
+
+### Repo
 **_[Link to my Github](https://github.com/juhomon/IODS-project)_**
 
+### Diary
 **_[Link to the web page](https://juhomon.github.io/IODS-project/)_**
 
 ```{r}
