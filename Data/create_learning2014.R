@@ -53,7 +53,8 @@ df.out <- df %>%
   mutate_addCalc(var.df) %>%
   rename_with(str_to_lower) %>%
   dplyr::select(gender, age, attitude, deep_adj, stra_adj, surf_adj, points) %>%
-  rename_with( ~ gsub("_adj$", "",.x))
+  rename_with( ~ gsub("_adj$", "",.x)) %>% 
+  dplyr::filter(points!=0)
 
 ## Write output
 write.table(df.out, file = paste(outfolder, outfile, sep = "/"), quote = F, sep = "\t", col.names = T)
