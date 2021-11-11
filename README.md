@@ -1,2 +1,5 @@
 # IODS-project
-Template for the IODS course
+Forked for course edits
+
+### Link to the diary
+https://juhomon.github.io/IODS-project/
