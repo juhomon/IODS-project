@@ -26,12 +26,11 @@ dim(df)
 ## -------
 
 ## read variables in
-var.in <- readLines("http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS2-meta.txt", )
+var.in <- readLines("http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS2-meta.txt")
 
-## select lines by determining start and end, needs to be done manually.
-start <- "+VAR d_sm:1=D03+D11+D19+D27"
-end <- "+VAR Stra_adj:4=Stra/8"
-lines <- which(str_sub(var.in, 1, nchar(start)) == start):which(str_sub(var.in, 1, nchar(end)) == end)
+## select lines by determining start of line with "start.str".
+start.str <- "+VAR"
+lines <- which(str_sub(var.in, 1, nchar(start.str)) == start.str)
 
 ## check that the line interval is indeed correct
 var.tmp <- var.in[lines]
@@ -43,6 +42,10 @@ print(var.tmp)
 
 ## clean ":1" etc.
 var.tmp <- sub(":[0-9]", "", var.tmp) 
+print(var.tmp)
+
+## Remove this one addition...
+var.tmp <- sub("TO ASSIST2015FI", "", var.tmp) 
 print(var.tmp)
 
 ## Create var.df
