@@ -31,7 +31,7 @@ var.in <- readLines("http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS2-meta.txt
 ## select lines by determining start and end, needs to be done manually.
 start <- "+VAR d_sm:1=D03+D11+D19+D27"
 end <- "+VAR Stra_adj:4=Stra/8"
-lines <- which(str_sub(var.lines, 1, nchar(start)) == start):which(str_sub(var.lines, 1, nchar(end)) == end)
+lines <- which(str_sub(var.in, 1, nchar(start)) == start):which(str_sub(var.in, 1, nchar(end)) == end)
 
 ## check that the line interval is indeed correct
 var.tmp <- var.in[lines]
@@ -52,7 +52,7 @@ var.df <- data.frame(vars=sub("=.*", "", var.tmp), calcs=sub(".*?=", "", var.tmp
 df.out <- df %>% 
   mutate_addCalc(var.df) %>%
   rename_with(str_to_lower) %>%
-  dplyr::select(gender, age, attitude, deep_adj, stra_adj, surf_adj) %>%
+  dplyr::select(gender, age, attitude, deep_adj, stra_adj, surf_adj, points) %>%
   rename_with( ~ gsub("_adj$", "",.x))
 
 ## Write output
