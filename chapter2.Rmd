@@ -165,3 +165,8 @@ plot(lm.data, which=c(1,2,5))
 
 From **Figure 3** "Residuals vs Fitted" plot we can see that there are no worrying trends apparent in the plot. This suggest that we can assume linear relationship between dependent and independent variables. In **Figure 3** "Normal Q-Q" plot we see that the points follow the reference line quite nicely and thus we can assume normality. In  **Figure 3** "Residuals vs Leverage" we can see that there are no influential points (observations that affects the coefficients in the model summary drastically). If there were influential points we should pin-point the cause behind the outlier and possibly even remove it (if it is from erroneous measurement etc.).
 
+```{r}
+# Date and session info
+date()
+sessionInfo()
+```

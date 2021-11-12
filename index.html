@@ -169,10 +169,10 @@ pre code {
 
 <div id="TOC">
 <ul>
-<li><a href="#chapter-1---introduction-to-iods-course-project">Chapter 1 - Introduction to IODS course project</a></li>
-<li><a href="#chapter-1---brief-introduction">Chapter 1 - Brief introduction</a>
+<li><a href="#chapter-1---introduction-to-iods-course-project">Chapter 1 - Introduction to IODS course project</a>
 <ul>
-<li><a href="#things-i-expect-to-learn">Things I expect to learn:</a></li>
+<li><a href="#brief-introduction">Brief introduction</a></li>
+<li><a href="#things-i-expect-to-learn">Things I expect to learn</a></li>
 <li><a href="#links">Links</a></li>
 </ul></li>
 <li><a href="#chapter-2---regression-and-model-validation">Chapter 2 - Regression and model validation</a>
@@ -187,13 +187,13 @@ pre code {
 <hr />
 <div id="chapter-1---introduction-to-iods-course-project" class="section level1">
 <h1>Chapter 1 - Introduction to IODS course project</h1>
-</div>
-<div id="chapter-1---brief-introduction" class="section level1">
-<h1>Chapter 1 - Brief introduction</h1>
+<div id="brief-introduction" class="section level2">
+<h2>Brief introduction</h2>
 <p>Hello, I am Juho Mononen, a PhD student from UEF who who has <em>some</em> experience with Github and is quite familiar with R and Rstudio. Currently dappling in bioinformatics with a main focus of identifying regulatory sites affected by genetic variation. I am mostly self taught in programming, so participating to unlearn potentially bad habits and to learn better practices with project managing and statistics.</p>
 <p>A friend introduced me to this course.</p>
+</div>
 <div id="things-i-expect-to-learn" class="section level2">
-<h2>Things I expect to learn:</h2>
+<h2>Things I expect to learn</h2>
 <ul>
 <li>Basics of version control and Github usage with R</li>
 <li>Good practices with R and Rstudio</li>
@@ -211,7 +211,7 @@ plot(x = c(-0.5,0.5), y = c(6,6), ylim=c(0,8), xlim = c(-1,1), cex = 5, xlab = &
 curve(-log(1-x^2), from = -1, to = 1, add = T, col = &quot;dodgerblue4&quot;, lwd = 5)</code></pre>
 <p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAkAAAAJACAMAAABSRCkEAAAABlBMVEUQTov///97lEpUAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAJNUlEQVR4nO3dW04cyxZFUdz/Tl8dXVkyUI9Iz6ByZ3mMDrAy9oRfPn5B8HH2AK5NQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGR/IsBffx29pAbJm+76TJD9/i44exNv03edt8FJm5060ZTrjR52wPzF+5z+0QzzjR520PT9210/0bnX2nytseGz9vn0YnOPtPkbc+MHrfRsxudeaXJ256avG2j5zc670qTtz03eNpGKzc660qTty2Yu2ynyUeavG3B3GUbrd3onCtN3rZi7LCNVm90xpUmb1sydddOk480eduSqbs2Wr/R6680eduaobN2mnykydvWDJ210ZEbvfpKk7ctmrlqp8lHmrxt0cxVO00+0uRti2au2mnykSZvWzRz1UbHbvTaK03etmrkqJ0mH2nytlUjR+00+UiTt60aOWqnyUeavG3VyFE7TT7S5G2rRo7aafKRJm9bNXLUTpOPNHnbqpGjdpp8pMnbVo0ctdPkI03etmrkqJ0mH2nytlUjR201+UaTty2auWqnyUeavG3RzFU7TT7S5G2LZq7aafKRJm9bNHPVVpNvNHnbmqGzdpp8pMnb1gydtdXkG03etmTqrp0mH2nytiVTd201+UaTt60YO2yryTeavG3B3GU7TT7S5G0L5i7bavKNJm97bvC0rSbfaPK2pyZv22ryjSZve2b0uL0mn2jytseGz9tq8o0mb3to+r69Jp9o8rYH5i/cavKNJm+77wITt5t8nsnbbrrMUGYSEImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIrhTQpf6HxAgveLELHeRi/4VkgFe82HXucbn/Y3O6l7zYdc4hoKME9Kcr/RO2GV7zYtc5h4IOEtBnAjpIQJ8J6CABfSaggwT0mYAOEtBnAjrmRe91oWso6BABfSWgQwT0lYAOEdBXAjpEQF8J6BABfSWgI171Wlc6hoIOENB3AjpAQN8J6AABfSegAwT0nYAOENB3Alr3sre61C0UtExAtwhomYBuEdAyAd2koEWve6hrXUJAiwR0m4AWCegOBS154TNd7BACWiKgewS0RED3CGjFK1/paodQ0AIB3SegBQJ6QEFPvfSJLncGAT0loIcU9MRrH+h6VxDQEwJ67ENBD734eS54BAE9JKBn/Al65NWvc8UbCOiBVz/OFW/gT9B9L3+bS55AQfe8/mUueYEPBd12wsNc8wACuumMX6xrHsCfoFs+BLRMQd+d0s87BHTRT9jtQ0BHCOiLk/q5bEAK+uysfq4bkIL+dFo/bxLQv57QiW9x4ZdX0G9nvsSVH15B/3fqO1z63T8k9Ovs36NLv/qHgs7u59oBfSvo2l/zN07//os/+b9e0Plff/kX/5cTmvDp13/vf7egER/+Bs/9raA3+KYFQ776LR57yFu+1JRvfo+3/uf+CM354Hd56TEP+gLf6znxa9/moW+86tt8259ufeeZH/pGjzztaX/CvG98pxe++bo+8Ic3nfvjNxv4wPtMzOfdArrzyG/wkXc+7PwvO3/BZmNfOrj3TRM+asKGve6+9kU/9f73jPigESM2G/7kRzz4lCHfMmTGZo/efc7bP3KZL5izZLPLXOCGK02ftWavZw1Nu8WvpcnDNg+bs9nKPYacZHHqiK1/Gjdos9W7nHeaAwsnHmvips2OXOilRxo77IihszY7eKqfPdioMdncZZv91dl2HfDUH/6zRo/bLJ7xJGe/2hPT9212dg1Hnf1ez11g4g84u4vnzn6hZddZutnZhTxy9tsccamx+52dyldnv8dxF5y839nZ/OfsN/hblx2+n3L+xtX37yedQ97jK36Ebla82ef8GM3c8c7fxgsIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgkv8BWS7yqwvCSJcAAAAASUVORK5CYII=" width="288" /></p>
 <pre class="r"><code>date()</code></pre>
-<pre><code>## [1] &quot;Fri Nov 12 02:12:38 2021&quot;</code></pre>
+<pre><code>## [1] &quot;Fri Nov 12 02:19:22 2021&quot;</code></pre>
 <hr />
 </div>
 </div>
@@ -412,6 +412,48 @@ plot(lm.data, which=c(1,2,5))</code></pre>
 </p>
 </div>
 <p>From <strong>Figure 3</strong> “Residuals vs Fitted” plot we can see that there are no worrying trends apparent in the plot. This suggest that we can assume linear relationship between dependent and independent variables. In <strong>Figure 3</strong> “Normal Q-Q” plot we see that the points follow the reference line quite nicely and thus we can assume normality. In <strong>Figure 3</strong> “Residuals vs Leverage” we can see that there are no influential points (observations that affects the coefficients in the model summary drastically). If there were influential points we should pin-point the cause behind the outlier and possibly even remove it (if it is from erroneous measurement etc.).</p>
+<pre class="r"><code># Date and session info
+date()</code></pre>
+<pre><code>## [1] &quot;Fri Nov 12 02:19:25 2021&quot;</code></pre>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 4.1.1 (2021-08-10)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 19043)
+## 
+## Matrix products: default
+## 
+## locale:
+## [1] LC_COLLATE=Finnish_Finland.1252  LC_CTYPE=Finnish_Finland.1252   
+## [3] LC_MONETARY=Finnish_Finland.1252 LC_NUMERIC=C                    
+## [5] LC_TIME=Finnish_Finland.1252    
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] broom_0.7.10    forcats_0.5.1   stringr_1.4.0   dplyr_1.0.7    
+##  [5] purrr_0.3.4     readr_2.0.2     tidyr_1.1.4     tibble_3.1.5   
+##  [9] tidyverse_1.3.1 ggpubr_0.4.0    GGally_2.1.2    ggplot2_3.3.5  
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_1.0.7         lubridate_1.8.0    assertthat_0.2.1   digest_0.6.28     
+##  [5] utf8_1.2.2         R6_2.5.1           cellranger_1.1.0   plyr_1.8.6        
+##  [9] backports_1.3.0    reprex_2.0.1       evaluate_0.14      httr_1.4.2        
+## [13] highr_0.9          pillar_1.6.4       rlang_0.4.12       curl_4.3.2        
+## [17] readxl_1.3.1       rstudioapi_0.13    data.table_1.14.2  car_3.0-11        
+## [21] jquerylib_0.1.4    rmarkdown_2.11     labeling_0.4.2     foreign_0.8-81    
+## [25] munsell_0.5.0      compiler_4.1.1     modelr_0.1.8       xfun_0.27         
+## [29] pkgconfig_2.0.3    htmltools_0.5.2    tidyselect_1.1.1   rio_0.5.27        
+## [33] reshape_0.8.8      fansi_0.5.0        tzdb_0.1.2         crayon_1.4.2      
+## [37] dbplyr_2.1.1       withr_2.4.2        grid_4.1.1         jsonlite_1.7.2    
+## [41] gtable_0.3.0       lifecycle_1.0.1    DBI_1.1.1          magrittr_2.0.1    
+## [45] scales_1.1.1       zip_2.2.0          cli_3.0.1          stringi_1.7.5     
+## [49] carData_3.0-4      farver_2.1.0       ggsignif_0.6.3     fs_1.5.0          
+## [53] xml2_1.3.2         bslib_0.3.1        ellipsis_0.3.2     generics_0.1.1    
+## [57] vctrs_0.3.8        cowplot_1.1.1      openxlsx_4.2.4     RColorBrewer_1.1-2
+## [61] tools_4.1.1        glue_1.4.2         hms_1.1.1          abind_1.4-5       
+## [65] fastmap_1.1.0      yaml_2.2.1         colorspace_2.0-2   rvest_1.0.2       
+## [69] rstatix_0.7.0      knitr_1.36         haven_2.4.3        sass_0.4.0</code></pre>
 <hr />
 </div>
 </div>
