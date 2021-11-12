@@ -1,13 +1,167 @@
-# Insert chapter 2 title here
+## General features of the dataset 
 
-*Describe the work you have done this week and summarize your learning.*
+### ASSIST dataset
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+We are going to analyse a subset of a data set from ASSIST (Approaches and Study Skills Inventory for Students) study which in its' raw format can be found [here](https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS3-data.txt). 
 
 ```{r}
-date()
+# Read file that was wrangled
+students2014 <- read.delim("Data/learning2014.tsv", header = T, sep = "\t")
+
+# Structure and dimensions
+str(students2014)
+# ...and dimensions
+dim(students2014)
+```
+As can be seen from the `str()` and `dim()` calls, the subset that we have consists of 7 variables with 166 observations each. 
+
+### Loading packages for easier data wrangling and plotting
+
+For the following steps which include plotting, we are going to use some functions in following packages:
+
+```{r, message=FALSE}
+library(GGally)
+library(ggpubr)
+library(tidyverse)
+library(broom)
 ```
 
-Here we go again...
+### Getting to know the data
+Now that we have our packages set up, we can proceed to take a closer look at the variables. Lets start with `summary()` which gives us some base statistics for the variables:
+
+
+```{r}
+summary(students2014)
+```
+
+Although this function provides us with much information, it is not that intuitive to assess larger differences from this output. We can tell that 166 males and females total are between ages 17-55 with mean age of 25.51. Also variables `age`, `attidute` and `points` are by average larger than `deep`, `stra` and `surf`. Lets make some plots to look into this data further. First lets make some adjustments to the `students2014` to make it easier to plot with *e.g.* `ggplot()`. 
+
+
+```{r}
+## Lets gather our multi-column data to three columns to make plotting and data editing with grouping easier
+to.ggplot <- students2014 %>% gather(key="Variable", value = "Value", -gender) 
+## Check that everything is in order
+str(to.ggplot)
+```
+
+Now, if we want to perform statistical testing for the variables we should figure out which of the variables are normally and non-normally distributed. We can do this by performing Shapiro-Wilk test to the data. We can do this with the commands described below. Shapiro-wilk test and normality testing in R are described [**here**](http://www.sthda.com/english/wiki/normality-test-in-r) in more detail.
+
+```{r}
+## Lets test for normality so we can determine the best tests for statistical difference
+normality.res <- to.ggplot %>%
+  ## perform by groups
+  group_by(Variable) %>% 
+  ## create data.frame()-ception
+  nest() %>% 
+  ## perform shapiro-wilk to the nested DFs
+  mutate(Shapiro.test = map(data, ~ shapiro.test(.x$Value))) %>% 
+  ## use broom::glance to generate shapiro-wilk summary
+  mutate(Shapiro.sum = Shapiro.test %>% map(glance)) %>%
+  ## unlist the summary to make it more accessible
+  unnest(Shapiro.sum)
+
+## Save normally distributed and non-normally distributed variables into variables
+normal.values <- normality.res$Variable[which(normality.res$p.value>0.05)]
+non.normal <- normality.res$Variable[which(normality.res$p.value<=0.05)]
+
+## Print the results
+normal.values
+non.normal
+```
+
+It would seem that variables `stra` and `surf` are normally distributed (Shapiro-Wilk P-value>0.05) while  `age`, `attidute`, `deep` and `points` are not (Shapiro-Wilk P-value$\geq$0.05). 
+
+### Generating some basic plots for data exploration
+
+Since we don't really have a grasp on ratio of females/males in our data we can generate a plot for that information. We could also test whether the distributions of certain variables between female and male are different. We can plot a box plot for distributions and perform T-test/Wilcoxon signed-rank test  depending on variable normality that we tested before. 
+
+```{r, fig.height=3, fig.width=10, fig.cap="**Figure 1:** Basic plots for data exploration. **A)** Counts of data set subjects by gender. **B)** Box plots of the different variables."}
+
+## generate a simple bar plot for counts of male and female subjects in the data set
+p1 <- ggplot(dplyr::select(students2014, gender), aes(x=gender, fill=gender)) +
+  geom_bar(colour="black") + 
+  ## expand the y-axis so that the count labels don't cut off
+  scale_y_continuous(expand = expansion(mult = c(0, .2))) + 
+  geom_text(stat='count', aes(label=..count..), vjust=-1) +
+  scale_fill_manual(values = c("red", "blue")) +
+  theme_bw(12) + 
+  ## remove unnecessary x axis title
+  theme(axis.title.x = element_blank())
+
+## Plot normally distributed variables as bar plots and perform t.test using stat_compare_means
+p2.n <- ggplot(dplyr::filter(to.ggplot, Variable %in% normal.values), 
+               aes(x = gender, y = Value, fill = gender, group=gender)) +
+  geom_boxplot() + 
+  ## expand the y-axis so that the P-value labels don't cut off
+  scale_y_continuous(expand = expansion(mult = c(0, .2))) +
+  scale_fill_manual(values = c("red", "blue")) + 
+  ## Separate variables into different facets
+  facet_wrap(~Variable, scales="free", nrow=1) + 
+  ## perform T-test
+  stat_compare_means(comparisons = list(c("F","M")), method = "t.test") +
+  theme_bw(12) + 
+  ## remove unnecessary legend  as it is in p2.nn
+  ## remove unnecessary x axis title
+  theme(legend.position = "none",
+        axis.title.x = element_blank()) ## remove unnecessary legend  as it is in p2.nn
+
+## Plot normally distributed variables as bar plots and perform t.test using stat_compare_means
+p2.nn <- ggplot(dplyr::filter(to.ggplot, Variable %in% non.normal), 
+                aes(x = gender, y = Value, fill = gender, group=gender)) +
+  geom_boxplot() + 
+  ## expand the y-axis so that the P-value labels don't cut off
+  scale_y_continuous(expand = expansion(mult = c(0, .2))) +
+  scale_fill_manual(values = c("red", "blue")) +
+  ## Separate variables into different facets
+  facet_wrap(~Variable, scales="free", nrow=1) +
+   ## perform T-test
+  stat_compare_means(comparisons = list(c("F","M")), method = "wilcox.test") +
+  theme_bw(12) + 
+  ## remove unnecessary y-axis title as it is in p2.n
+  ## remove unnecessary x axis title
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank()) 
+## Combine plots with ggpubr's ggarrange() for labeling
+ggarrange(p1, p2.n, p2.nn, labels = c("A", "B"), nrow=1, widths = c(1,1,2.3))
+
+```
+
+There are observations almost two times as many females in the data set as there are males (**Figure 1A**). None of the variables seem to be differentially distributed between males and females (**Figure 1B**). 
+
+## Performing regression analysis for `points`
+
+Now that we are familiar with the data set we can move on to regression modelling. We are going to use multiple regression to test how well test-`points` can be predicted using 3 variables from the data set (more information on multiple regression [here](https://www.datacamp.com/community/tutorials/linear-regression-R)). We can select the *e.g.* the variables with highest correlation with `points` for the fit. While we are at it we can plot all of the inter-variables correlations in our data set using `GGally::ggcor()`.
+
+```{r, fig.height=4, fig.width=4, fig.cap="**Figure 2:** Correlation plot for the different variables"}
+## remove gender as it is not numeric and gives error
+ggcorr(students2014[colnames(students2014) != "gender"], palette = "RdBu", label = TRUE, label_round=3) 
+```
+
+Based on the results of the correlation analysis (**Figure 2**) we could use variables `stra`, `surf` and `attidute` for our explanatory variables for `points`. Lets build the model using `lm()` and view the summary of the results. 
+
+```{r}
+lm.data <- lm(points ~ attitude + stra + surf, data = students2014)
+summary(lm.data)
+
+```
+Out of the variables used for fitting, only `attidute` seems to be a good addition to the model with -value < 2.26e-05. For every "global attitude toward statistics" point, exam points rise by ~0.34. Rest of the variables useed for the model did not reach significance (P-value<0.05), although with a looser cut-off (*e.g.* P-value<0.1) `surf` aka "Surface approach" seems to have negative impact on test score.
+
+The model however, is quite unimpressive. Even though it is statistically significant (the independent variables explain the dependent variable, P-value<2.399e-05) it does not explain a lot of the whole situation. R^2^ value can be used to asses how good the model is at explaining the variability in the data. R^2^ is calculated in the following manner: 
+
+$$
+R^2 = \frac{\text{Explained variation of the model}}{\text{Total variation of the model}}
+$$
+
+The higher the R^2^ (closer to 1) the better. The multiple R^2^ of the model is a measly 0.1378 which means that the current model fails to predict most of the variability (predicts ~14% of it). In summary, the model explains the dependent variable but only on a small scale.
+
+## Assessing the quality of the model
+
+We can now assess the models validity by plotting some diagnostic plots.
+
+```{r, fig.height=8, fig.width=8, fig.cap="**Figure 3:** Plots for Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage"}
+par(mfrow = c(2,2))
+plot(lm.data, which=c(1,2,5))
+```
+
+From **Figure 3** "Residuals vs Fitted" plot we can see that there are no worrying trends apparent in the plot. This suggest that we can assume linear relationship between dependent and independent variables. In **Figure 3** "Normal Q-Q" plot we see that the points follow the reference line quite nicely and thus we can assume normality. In  **Figure 3** "Residuals vs Leverage" we can see that there are no influential points (observations that affects the coefficients in the model summary drastically). If there were influential points we should pin-point the cause behind the outlier and possibly even remove it (if it is from erroneous measurement etc.).
+

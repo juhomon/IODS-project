@@ -1,4 +1,4 @@
-## Brief introduction
+# Chapter 1 - Brief introduction
 
 Hello, I am Juho Mononen, a PhD student from UEF who who has *some* experience with Github and is quite familiar with R and Rstudio. Currently dappling in bioinformatics with a main focus of identifying regulatory sites affected by genetic variation. I am mostly self taught in programming, so participating to unlearn potentially bad habits and to learn better practices with project managing and statistics. 
 
@@ -13,10 +13,7 @@ A friend introduced me to this course.
 ### Repo
 **_[Link to my Github](https://github.com/juhomon/IODS-project)_**
 
-### Diary
-**_[Link to the web page](https://juhomon.github.io/IODS-project/)_**
-
-```{r}
+```{r, fig.height=3, fig.width=3}
 # Smiley 
 
 ## Somewhat disturbing smiley for testing
@@ -26,10 +23,5 @@ curve(-log(1-x^2), from = -1, to = 1, add = T, col = "dodgerblue4", lwd = 5)
 ```
 
 ```{r}
-# This is a so-called "R chunk" where you can write R code.
-
 date()
-
 ```
-The text continues here.
-
