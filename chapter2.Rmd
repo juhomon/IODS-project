@@ -2,7 +2,7 @@
 
 ### ASSIST dataset
 
-We are going to analyse a subset of a data set from ASSIST (Approaches and Study Skills Inventory for Students) study which in its' raw format can be found [here](https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS3-data.txt). 
+We are going to analyse a subset of a data set from ASSIST (Approaches and Study Skills Inventory for Students) study which in its' raw format can be found [here](https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS3-data.txt). The study was on evaluating different learning approaches in students. The different learning methods covered were **DEEP** learning **STRA**tegic learning and **SURF**ace learning (*bolded sections of the learning methods represent the variable name in the dataset which is loaded below*; students2014). 
 
 ```{r}
 # Read file that was wrangled
@@ -13,7 +13,7 @@ str(students2014)
 # ...and dimensions
 dim(students2014)
 ```
-As can be seen from the `str()` and `dim()` calls, the subset that we have consists of 7 variables with 166 observations each. 
+As can be seen from the `str()` and `dim()` calls, the subset that we have consists of 7 variables with 166 observations each. Three of these variables are numeric (`deep`,`stra` and `surf`), one character/categorical (`gender`) and three integers (`age`,`arttitude` and `points`).
 
 ### Loading packages for easier data wrangling and plotting
 
@@ -69,11 +69,11 @@ normal.values
 non.normal
 ```
 
-It would seem that variables `stra` and `surf` are normally distributed (Shapiro-Wilk P-value>0.05) while  `age`, `attidute`, `deep` and `points` are not (Shapiro-Wilk P-value$\geq$0.05). 
+It would seem that variables `stra` and `surf` are normally distributed (Shapiro-Wilk P-value>0.05) while  `age`, `attidute`, `deep` and `points` are not (Shapiro-Wilk P-value $\leq$ 0.05). 
 
 ### Generating some basic plots for data exploration
 
-Since we don't really have a grasp on ratio of females/males in our data we can generate a plot for that information. We could also test whether the distributions of certain variables between female and male are different. We can plot a box plot for distributions and perform T-test/Wilcoxon signed-rank test  depending on variable normality that we tested before. 
+Since we don't really have a grasp on ratio of females/males in our data we can generate a plot for that information. We could also test whether the distributions of certain variables between female and male are different. We can plot a box plot for distributions and perform independent T-test/unpaired two-samples Wilcoxon test  depending on variable normality that we tested before. 
 
 ```{r, fig.height=3, fig.width=10, fig.cap="**Figure 1:** Basic plots for data exploration. **A)** Counts of data set subjects by gender. **B)** Box plots of the different variables."}
 
@@ -98,7 +98,7 @@ p2.n <- ggplot(dplyr::filter(to.ggplot, Variable %in% normal.values),
   ## Separate variables into different facets
   facet_wrap(~Variable, scales="free", nrow=1) + 
   ## perform T-test
-  stat_compare_means(comparisons = list(c("F","M")), method = "t.test") +
+  stat_compare_means(comparisons = list(c("F","M")), method = "t.test", paired = FALSE) +
   theme_bw(12) + 
   ## remove unnecessary legend  as it is in p2.nn
   ## remove unnecessary x axis title
@@ -115,7 +115,7 @@ p2.nn <- ggplot(dplyr::filter(to.ggplot, Variable %in% non.normal),
   ## Separate variables into different facets
   facet_wrap(~Variable, scales="free", nrow=1) +
    ## perform T-test
-  stat_compare_means(comparisons = list(c("F","M")), method = "wilcox.test") +
+  stat_compare_means(comparisons = list(c("F","M")), method = "wilcox.test", paired = FALSE) +
   theme_bw(12) + 
   ## remove unnecessary y-axis title as it is in p2.n
   ## remove unnecessary x axis title
@@ -126,7 +126,7 @@ ggarrange(p1, p2.n, p2.nn, labels = c("A", "B"), nrow=1, widths = c(1,1,2.3))
 
 ```
 
-There are observations almost two times as many females in the data set as there are males (**Figure 1A**). None of the variables seem to be differentially distributed between males and females (**Figure 1B**). 
+There are observations almost two times as many females in the data set as there are males (**Figure 1A**). Age seems to be the only variable that has different distribution between males and females, with males being higher aged (Wilcoxon P-value<0.05) (**Figure 1B**). 
 
 ## Performing regression analysis for `points`
 
@@ -163,7 +163,7 @@ par(mfrow = c(2,2))
 plot(lm.data, which=c(1,2,5))
 ```
 
-From **Figure 3** "Residuals vs Fitted" plot we can see that there are no worrying trends apparent in the plot. This suggest that we can assume linear relationship between dependent and independent variables. In **Figure 3** "Normal Q-Q" plot we see that the points follow the reference line quite nicely and thus we can assume normality. In  **Figure 3** "Residuals vs Leverage" we can see that there are no influential points (observations that affects the coefficients in the model summary drastically). If there were influential points we should pin-point the cause behind the outlier and possibly even remove it (if it is from erroneous measurement etc.).
+From **Figure 3 "Residuals vs Fitted"**  plot we can see that there are no worrying trends apparent in the plot. This suggest that we can assume linear relationship between dependent and independent variables. In **Figure 3 "Normal Q-Q"**  plot we see that the points follow the reference line quite nicely and thus we can assume normality. In  **Figure 3" Residuals vs Leverage"**  we can see that there are no influential points (observations that affects the coefficients in the model summary drastically). If there were influential points we should pin-point the cause behind the outlier and possibly even remove it (if it is from erroneous measurement etc.).
 
 ```{r}
 # Date and session info

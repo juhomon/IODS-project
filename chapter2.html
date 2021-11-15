@@ -171,7 +171,7 @@ pre code {
 <h2>General features of the dataset</h2>
 <div id="assist-dataset" class="section level3">
 <h3>ASSIST dataset</h3>
-<p>We are going to analyse a subset of a data set from ASSIST (Approaches and Study Skills Inventory for Students) study which in its’ raw format can be found <a href="https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS3-data.txt">here</a>.</p>
+<p>We are going to analyse a subset of a data set from ASSIST (Approaches and Study Skills Inventory for Students) study which in its’ raw format can be found <a href="https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS3-data.txt">here</a>. The study was on evaluating different learning approaches in students. The different learning methods covered were <strong>DEEP</strong> learning <strong>STRA</strong>tegic learning and <strong>SURF</strong>ace learning (<em>bolded sections of the learning methods represent the variable name in the dataset which is loaded below</em>; students2014).</p>
 <pre class="r"><code># Read file that was wrangled
 students2014 &lt;- read.delim(&quot;Data/learning2014.tsv&quot;, header = T, sep = &quot;\t&quot;)
 
@@ -188,7 +188,7 @@ str(students2014)</code></pre>
 <pre class="r"><code># ...and dimensions
 dim(students2014)</code></pre>
 <pre><code>## [1] 166   7</code></pre>
-<p>As can be seen from the <code>str()</code> and <code>dim()</code> calls, the subset that we have consists of 7 variables with 166 observations each.</p>
+<p>As can be seen from the <code>str()</code> and <code>dim()</code> calls, the subset that we have consists of 7 variables with 166 observations each. Three of these variables are numeric (<code>deep</code>,<code>stra</code> and <code>surf</code>), one character/categorical (<code>gender</code>) and three integers (<code>age</code>,<code>arttitude</code> and <code>points</code>).</p>
 </div>
 <div id="loading-packages-for-easier-data-wrangling-and-plotting" class="section level3">
 <h3>Loading packages for easier data wrangling and plotting</h3>
@@ -248,11 +248,11 @@ normal.values</code></pre>
 <pre><code>## [1] &quot;stra&quot; &quot;surf&quot;</code></pre>
 <pre class="r"><code>non.normal</code></pre>
 <pre><code>## [1] &quot;age&quot;      &quot;attitude&quot; &quot;deep&quot;     &quot;points&quot;</code></pre>
-<p>It would seem that variables <code>stra</code> and <code>surf</code> are normally distributed (Shapiro-Wilk P-value&gt;0.05) while <code>age</code>, <code>attidute</code>, <code>deep</code> and <code>points</code> are not (Shapiro-Wilk P-value$$0.05).</p>
+<p>It would seem that variables <code>stra</code> and <code>surf</code> are normally distributed (Shapiro-Wilk P-value&gt;0.05) while <code>age</code>, <code>attidute</code>, <code>deep</code> and <code>points</code> are not (Shapiro-Wilk P-value <span class="math inline">\(\leq\)</span> 0.05).</p>
 </div>
 <div id="generating-some-basic-plots-for-data-exploration" class="section level3">
 <h3>Generating some basic plots for data exploration</h3>
-<p>Since we don’t really have a grasp on ratio of females/males in our data we can generate a plot for that information. We could also test whether the distributions of certain variables between female and male are different. We can plot a box plot for distributions and perform T-test/Wilcoxon signed-rank test depending on variable normality that we tested before.</p>
+<p>Since we don’t really have a grasp on ratio of females/males in our data we can generate a plot for that information. We could also test whether the distributions of certain variables between female and male are different. We can plot a box plot for distributions and perform independent T-test/unpaired two-samples Wilcoxon test depending on variable normality that we tested before.</p>
 <pre class="r"><code>## generate a simple bar plot for counts of male and female subjects in the data set
 p1 &lt;- ggplot(dplyr::select(students2014, gender), aes(x=gender, fill=gender)) +
   geom_bar(colour=&quot;black&quot;) + 
@@ -274,7 +274,7 @@ p2.n &lt;- ggplot(dplyr::filter(to.ggplot, Variable %in% normal.values),
   ## Separate variables into different facets
   facet_wrap(~Variable, scales=&quot;free&quot;, nrow=1) + 
   ## perform T-test
-  stat_compare_means(comparisons = list(c(&quot;F&quot;,&quot;M&quot;)), method = &quot;t.test&quot;) +
+  stat_compare_means(comparisons = list(c(&quot;F&quot;,&quot;M&quot;)), method = &quot;t.test&quot;, paired = FALSE) +
   theme_bw(12) + 
   ## remove unnecessary legend  as it is in p2.nn
   ## remove unnecessary x axis title
@@ -291,7 +291,7 @@ p2.nn &lt;- ggplot(dplyr::filter(to.ggplot, Variable %in% non.normal),
   ## Separate variables into different facets
   facet_wrap(~Variable, scales=&quot;free&quot;, nrow=1) +
    ## perform T-test
-  stat_compare_means(comparisons = list(c(&quot;F&quot;,&quot;M&quot;)), method = &quot;wilcox.test&quot;) +
+  stat_compare_means(comparisons = list(c(&quot;F&quot;,&quot;M&quot;)), method = &quot;wilcox.test&quot;, paired = FALSE) +
   theme_bw(12) + 
   ## remove unnecessary y-axis title as it is in p2.n
   ## remove unnecessary x axis title
@@ -305,7 +305,7 @@ ggarrange(p1, p2.n, p2.nn, labels = c(&quot;A&quot;, &quot;B&quot;), nrow=1, wid
 <strong>Figure 1:</strong> Basic plots for data exploration. <strong>A)</strong> Counts of data set subjects by gender. <strong>B)</strong> Box plots of the different variables.
 </p>
 </div>
-<p>There are observations almost two times as many females in the data set as there are males (<strong>Figure 1A</strong>). None of the variables seem to be differentially distributed between males and females (<strong>Figure 1B</strong>).</p>
+<p>There are observations almost two times as many females in the data set as there are males (<strong>Figure 1A</strong>). Age seems to be the only variable that has different distribution between males and females, with males being higher aged (Wilcoxon P-value&lt;0.05) (<strong>Figure 1B</strong>).</p>
 </div>
 </div>
 <div id="performing-regression-analysis-for-points" class="section level2">
@@ -360,7 +360,49 @@ plot(lm.data, which=c(1,2,5))</code></pre>
 <strong>Figure 3:</strong> Plots for Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage
 </p>
 </div>
-<p>From <strong>Figure 3</strong> “Residuals vs Fitted” plot we can see that there are no worrying trends apparent in the plot. This suggest that we can assume linear relationship between dependent and independent variables. In <strong>Figure 3</strong> “Normal Q-Q” plot we see that the points follow the reference line quite nicely and thus we can assume normality. In <strong>Figure 3</strong> “Residuals vs Leverage” we can see that there are no influential points (observations that affects the coefficients in the model summary drastically). If there were influential points we should pin-point the cause behind the outlier and possibly even remove it (if it is from erroneous measurement etc.).</p>
+<p>From <strong>Figure 3 “Residuals vs Fitted”</strong> plot we can see that there are no worrying trends apparent in the plot. This suggest that we can assume linear relationship between dependent and independent variables. In <strong>Figure 3 “Normal Q-Q”</strong> plot we see that the points follow the reference line quite nicely and thus we can assume normality. In <strong>Figure 3” Residuals vs Leverage”</strong> we can see that there are no influential points (observations that affects the coefficients in the model summary drastically). If there were influential points we should pin-point the cause behind the outlier and possibly even remove it (if it is from erroneous measurement etc.).</p>
+<pre class="r"><code># Date and session info
+date()</code></pre>
+<pre><code>## [1] &quot;Mon Nov 15 03:22:41 2021&quot;</code></pre>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>## R version 4.1.1 (2021-08-10)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 19043)
+## 
+## Matrix products: default
+## 
+## locale:
+## [1] LC_COLLATE=Finnish_Finland.1252  LC_CTYPE=Finnish_Finland.1252   
+## [3] LC_MONETARY=Finnish_Finland.1252 LC_NUMERIC=C                    
+## [5] LC_TIME=Finnish_Finland.1252    
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] broom_0.7.10    forcats_0.5.1   stringr_1.4.0   dplyr_1.0.7    
+##  [5] purrr_0.3.4     readr_2.0.2     tidyr_1.1.4     tibble_3.1.5   
+##  [9] tidyverse_1.3.1 ggpubr_0.4.0    GGally_2.1.2    ggplot2_3.3.5  
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_1.0.7         lubridate_1.8.0    assertthat_0.2.1   digest_0.6.28     
+##  [5] utf8_1.2.2         R6_2.5.1           cellranger_1.1.0   plyr_1.8.6        
+##  [9] backports_1.3.0    reprex_2.0.1       evaluate_0.14      highr_0.9         
+## [13] httr_1.4.2         pillar_1.6.4       rlang_0.4.12       curl_4.3.2        
+## [17] readxl_1.3.1       rstudioapi_0.13    data.table_1.14.2  car_3.0-11        
+## [21] jquerylib_0.1.4    rmarkdown_2.11     labeling_0.4.2     foreign_0.8-81    
+## [25] munsell_0.5.0      compiler_4.1.1     modelr_0.1.8       xfun_0.27         
+## [29] pkgconfig_2.0.3    htmltools_0.5.2    tidyselect_1.1.1   rio_0.5.27        
+## [33] reshape_0.8.8      fansi_0.5.0        crayon_1.4.2       tzdb_0.1.2        
+## [37] dbplyr_2.1.1       withr_2.4.2        grid_4.1.1         jsonlite_1.7.2    
+## [41] gtable_0.3.0       lifecycle_1.0.1    DBI_1.1.1          magrittr_2.0.1    
+## [45] scales_1.1.1       zip_2.2.0          cli_3.1.0          stringi_1.7.5     
+## [49] carData_3.0-4      farver_2.1.0       ggsignif_0.6.3     fs_1.5.0          
+## [53] xml2_1.3.2         bslib_0.3.1        ellipsis_0.3.2     generics_0.1.1    
+## [57] vctrs_0.3.8        cowplot_1.1.1      openxlsx_4.2.4     RColorBrewer_1.1-2
+## [61] tools_4.1.1        glue_1.4.2         hms_1.1.1          abind_1.4-5       
+## [65] fastmap_1.1.0      colorspace_2.0-2   rvest_1.0.2        rstatix_0.7.0     
+## [69] knitr_1.36         haven_2.4.3        sass_0.4.0</code></pre>
 </div>
 
 
