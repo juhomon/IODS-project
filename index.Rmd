@@ -1,5 +1,6 @@
 ---
 title: "IODS course project"
+author: "Juho Mononen"
 output:
   html_document:
     author: "Juho Mononen"
