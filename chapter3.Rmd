@@ -1,0 +1,237 @@
+## Loading packages for easier data wrangling and plotting
+
+For the following steps which include plotting, we are going to use some functions in following packages:
+
+```{r, message=FALSE}
+library(GGally) ## plotting
+library(ggpubr) ## package which contains ggplot2 + useful tools 
+library(tidyverse) ## wrangling
+library(gridExtra) ## for plotting tables 
+```
+## General features of the dataset 
+
+### Dataset & variables
+In this session we will be exploring Student Performance Dataset which is based on data collected from students of two Portuguese schools. The data was collected from school reports and questionnaires. The full data can be found from [here](https://archive.ics.uci.edu/ml/datasets/Student+Performance). Lets have a closer look inside the data:
+
+```{r}
+# Read file that was wrangled + stringsAsFactors for glm in advance
+alc <- read.delim("Data/alc.tsv", header = T, sep = "\t")
+
+# Print colnames -> variables
+colnames(alc)
+```
+The data holds several levels of information for the students, for example, school, age, municipality type (rural/urban) and information about parents' education and job status. It also has information on extra curricular activities on several levels (_e.g._ free time after school and going out with friends) on 1-5 scale. However, in this session we are in particular interested of the variables `alc_use` and it's categorical version `high_use` which describe the weekly average and categorized normal/high alcohol usage respectively.
+
+### Graphical exploration of the variables
+Even though the dataset contains many interesting variables that could relate to high alcohol usage lets select few here and see how, by-eye, they are distributed among students. 
+
+```{r,fig.height=3, fig.width=10, fig.cap="**Figure 1.** Interesting variables for alcohol consumption exploration"}
+
+## selected variables to be plotted
+variables <- c("activities", "goout", "studytime", "absences")
+
+## Generate a list of plots
+p.list <- lapply(variables, function(x) {
+  
+  ## Create a data.frame for plotting with variable name as one columns 
+  tmp <- alc[x] %>% dplyr::rename(Value=x) %>% mutate({{x}}:=x)
+
+  ## if value is numeric we want to plot distributions as violin plots
+  if (is.numeric(tmp$Value)) {
+     ggplot(tmp, aes_string(y="Value", x=x)) +
+      geom_violin(fill="dodgerblue4") +
+      scale_y_continuous(expand = expansion(mult = c(0, .2))) + # remove spaces of axis/plot
+      theme_classic(14) +
+      theme(axis.text.x =element_blank())
+  ## Else we want to plot bar plots for categorical variable occurrences
+  } else {
+    ggplot(tmp, aes_string(x="Value")) +
+      geom_bar(position = "dodge", fill="dodgerblue4") +
+      geom_text(stat='count', aes(label=..count..), vjust=-1) +
+      scale_y_continuous(expand = expansion(mult = c(0, .2))) + 
+      theme_classic(14) +
+      xlab(x)
+    }
+})
+
+## plot the list of plots
+ggarrange(plotlist = p.list, nrow = 1, align = "hv")
+```
+
+`activities` which stands for "extra-curricular activities" seems to be fairly equally distributed in no/yes categories among the students. `goout` (going out with friends, from 1 - very low to 5 - very high) seems to be quite evenly distributed around 3 meaning that most students feel like they partake in social activities in "normal manner". `studytime` (weekly study time (numeric: 1 - <2 hours, 2 - 2 to 5 hours, 3 - 5 to 10 hours, or 4 - >10 hours)) on the other hand suggests that these students are not that hard working in general. High amount of `absences` (number of school absences) are rare.
+
+## Initial inspection of the relation of the variables and high-use
+Lets have a look on how, by eye, these variables relate to alcohol usage and high usage. We'll also have a quick glance on average alcohol usage and distribution of high-users among students.
+
+```{r,fig.height=7, fig.width=10, fig.cap="**Figure 2.** **A)** Distribution of high versus normal use students. **B)** Distribution of alchohol usage among students. Coloring based on high versus normal use. **C)** Proportions of activity partaking students at different alcohol usage levels. **D)** Correlation values for all numeric variables of interest and alcohol usage."}
+
+## plot bar plot of high vs non high use
+p1 <- ggplot(alc, aes(x=high_use, fill=high_use)) +
+  geom_bar(position="dodge") +
+  scale_fill_brewer(palette = "Set1") +
+  geom_text(stat='count', aes(label=..count..), vjust=-1) +
+  scale_y_continuous(expand = expansion(mult = c(0, .2))) + 
+  theme_bw(14)
+
+## plot distribution of alcohol use and color high use
+p2 <- ggplot(alc, aes(x=alc_use, fill=high_use)) +
+  geom_histogram(binwidth = 0.5,boundary=0) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0))) + 
+  scale_x_continuous(expand = expansion(mult = c(0, 0))) + 
+  theme_bw(14)
+
+# for activities variable plot proportions among alchol usage
+p3 <- ggplot(alc, aes(x=alc_use, fill=activities)) +
+  geom_histogram(binwidth = 0.5, position="fill",boundary=0) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0))) + 
+  scale_x_continuous(expand = expansion(mult = c(0, 0))) + 
+  theme_bw(14)
+
+## select numeric variables for plotting correlation plot. Lets use spearman for simplicity.
+vars.to.cor <- c("goout", "studytime", "absences", "alc_use") 
+p4 <- alc %>% 
+  select(any_of(vars.to.cor)) %>% 
+  ggcorr(palette = "RdBu", label = TRUE, label_round=3, method=c("everything", "spearman"))
+
+## combine plots
+ggarrange(p1,p2,p3,p4, nrow = 2, ncol = 2, labels = LETTERS[1:4])
+  
+```
+There are less high-amount alcohol users (high-users) in the students than there are normal users (**Figure 2A**). Most of the students have also really low alcohol usage compared to the few high-users (**Figure 2B**). The one categorical value that was selected (`activities`) could be explored by proportions by alcohol usage. We can observe a slightly higher ratio of extra curricular activities among high and low alcohol usage but there are no major trends visible here (**Figure 2C**). Correlation analysis of the numeric variables hints that higher amount of school absences and going out with friends is connected with high-use. Time spent studying seems to have negative correlation (**Figure 2D**). However it is to be noted that all correlation are fairly low.
+
+Based on this exploration we could hypothesize the following:
+1. Activities are not predictive of high-use.
+2. Absences and going out are predictive of more likely high-use.
+3. Time spent studying is predictive of lower use.
+
+## Performing logistic regression on the chosen variables
+
+Lets now perform logistic regression to see if we had our predictions/hypotheses correct.
+
+```{r,fig.height=3, fig.width=10, fig.cap="**Figure 3.** **A)** Odds ratios for the variables. Points represent the OR and seqments the confidence interval. **B)** Summary of the GL model variables."}
+## Read file that was wrangled
+m <- glm(high_use ~ goout + studytime + absences + activities, data = alc, family = "binomial")
+
+## compute odds ratios (OR)
+OR <- coef(m) %>% exp
+
+## compute confidence intervals (CI)
+CI <- confint(m) %>% exp
+
+## save the odds ratios with their confidence intervals
+res <- as.data.frame(cbind(OR, CI)) %>% 
+  rownames_to_column("Variable") %>% 
+  dplyr::filter(Variable!="(Intercept)")
+
+## Generate OR plot
+p.or <- ggplot(res, aes(x = OR, y = Variable)) + 
+  geom_point(colour="red", size=3) + 
+  geom_segment(aes(x = `2.5 %`, xend= `97.5 %`, yend=Variable), colour="red", lwd=1) +
+  geom_vline(xintercept = 1, linetype="dashed") +
+  ylab(NULL) +
+  theme_bw(14)
+
+## generate table plot for model summary
+p.tab <- summary(m)$coefficients %>% as.data.frame() %>%
+  mutate_all(function(x) signif(x, digits = 3)) %>% 
+  tableGrob()
+
+## Combine plots
+ggarrange(p.or, p.tab, nrow=1, labels = c("A","B"))
+```
+It seems that we were somewhat correct on our assumptions. Going out with friends boasts odds ratio (OR) of mighty 2.09 (**Figure 3A**) and is significantly associated based on model summary (**Figure 3B**). Studying time has a significant negative (OR=0.57) association with high-use. For the other variables things aren't so straight forward. Absences, while being significantly associated, with high-use presents only a minimal OR of 1.07. For our categorical variable, `activities` the shows that there is no significant difference observed between those students partaking in activities compared to those who are not in regards of high-use (**Figure 3A-B**). These results are quite similar to our hypotheses before, apart from the really low impact of absences.
+
+Based on these results we don't need to eliminate any of the numerical values from our model. How ever as explained [here](https://stats.stackexchange.com/questions/60817/significance-of-categorical-predictor-in-logistic-regression) we should perform likelihood ratio test for `activities` to test whether we should keep it in the model or not.
+
+```{r}
+test.mod1 <- glm(high_use ~ goout + studytime + absences + activities, data = alc, family = "binomial") # with rank
+test.mod2 <- glm(high_use ~ goout + studytime + absences, data = alc, family = "binomial") # without rank
+
+anova(test.mod1, test.mod2, test="LRT")
+
+```
+The test is non-significant (P=0.2238) so we can remove `activities` from our model.
+
+## Exploring the power of the model
+
+### Refitting and tabulations
+
+Lets now re-fit and perform some tabulations and prediction to see how strong our model is. Lets start by tabulating the outcomes based on our model
+
+```{r,fig.height=2, fig.width=6, fig.cap="**Figure 4.** **A** 2x2 tabulation. **B** Proportion table"}
+
+## Generate model with significant variables
+m2 <- glm(high_use ~ goout + studytime + absences, data = alc, family = "binomial")
+
+# predict() the probability of high_use
+probabilities <- predict(m2, type = "response")
+
+# add the predicted probabilities to 'alc'
+alc <- mutate(alc, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+alc <- mutate(alc, prediction = probability>0.5)
+
+# tabulate the target variable versus the predictions. Unclass here enables us to keep 2x2 format with tableGrob
+p.tab1 <- table(high_use = alc$high_use, prediction = alc$prediction) %>% unclass() %>% 
+  tableGrob()
+
+## plot prop table
+p.tab2 <- table(high_use = alc$high_use, prediction = alc$prediction) %>% 
+  prop.table() %>% 
+  round(digits = 2) %>%
+  addmargins() %>% 
+  tableGrob()
+
+## Combine plots
+ggarrange(p.tab1, p.tab2, nrow=1, labels = c("A", "B"))
+```
+It seems that our model has quite good predictability. False-positive and -negative rates are somewhat high (`r round(22/(22+47), digits=2)` and `r round(64/(237+64), digits=2)` respectively) (**Figure 4A**) which can also be seen from proportion table (**Figure 4B**).
+
+### Testing by quessing
+
+Lets test our model predictivness compared to random guessing using the a function from the datacamp exercise (`loss_func`), and by using some nonsensical probabilities. First lets get the prediction error when we quess that everyone is high-user and secondly that no one is high-user and compare these results to our models prediction error.
+
+```{r}
+
+# define a loss function (average prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+## Lets make a quess with probability of high use as 1
+loss_func(class = alc$high_use,
+          prob = 1)
+
+## Lets make a quess with probability of high use as 0
+loss_func(class = alc$high_use,
+          prob = 0)
+
+## Lets make a quess with probability of high as predicted by our model
+loss_func(class = alc$high_use,
+          prob = alc$prediction)
+```
+As we can see our model has the lowest prediction error when compared to the random guesses.
+
+## 10-fold cross validation with the latter model
+
+Additionally we can perform cross-validation for the model to test its' robustness.
+
+```{r}
+# K-fold cross-validation
+library(boot)
+cv <- cv.glm(data = alc, cost = loss_func, glmfit = m2, K = 10)
+
+# average number of wrong predictions in the cross validation
+cv$delta[1]
+```
+As we can see with cross validation our model has smaller prediction error compared to the model introduced in DataCamp exercise (0.24<0.26).
+
+
+```{r}
+date()
+sessionInfo()
+```
