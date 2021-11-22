@@ -25,7 +25,7 @@ colnames.both <- unique(colnames(por), colnames(mat))
 vars <- c("failures", "paid", "absences", "G1", "G2", "G3")
 join_by <- setdiff(colnames.both, vars)
 
-## Then of to joining
+## Then off to joining
 ## I don't see why we could not use inner join here?
 ## If we assume that the columns in join_by for the IDs for students then we should not after using inner_join()
 ## by those columns (=ID) have any duplicate rows for students. Also only those IDs that are present in both are kept.
