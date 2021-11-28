@@ -1,0 +1,304 @@
+## Loading packages for easier data wrangling and plotting
+
+For the following steps which include plotting, we are going to use some functions in following packages:
+
+```{r, message=FALSE}
+library(GGally) ## plotting
+library(ggpubr) ## package which contains ggplot2 + useful tools 
+library(tidyverse) ## wrangling
+library(MASS) ## for the data and analysis
+```
+
+## General features of the dataset 
+
+### Dataset & variables
+In this session we will be exploring `Boston` dataset which is part of `MASS` data analysis R package. The dataset contains information on the housing values in suburbs of Boston and was collected for a publication on methodological problems that come with the usage of housing market data in measuring willingness to pay for clean air\*.
+
+*\*Harrison, D. and Rubinfeld, D.L. (1978) Hedonic prices and the demand for clean air. J. Environ. Economics and Management 5, 81–102.*
+```{r}
+## load boston dataset to get aa clean version
+data("Boston")
+
+## check the contents
+str(Boston)
+dim(Boston)
+```
+The dataset has 14 variables 12 of which seem to be continuous and 2 integer. The dataset has 506 observations. Lets also have a look at the sumary of variables as this will be important to note later.
+
+```{r}
+## load boston dataset to get aa clean version
+summary(Boston)
+```
+As we can see all of the values are positive and have varying means and scales. For example, `nox` has values ranging from  0.385-0.871 while for `tax` the values are in the range of 187-711.
+
+### Graphical overview of the data
+
+Lets have a look at the data to see if there are any trends visible between the variables.
+
+```{r, fig.height=10, fig.width=10}
+
+## Shamelessly taking borrowing code from here: https://stackoverflow.com/questions/57450913/removing-background-color-for-column-labels-while-keeping-plot-background-color
+
+## this functions creates correlation plots (colour scale for correlation and numeric representation) that can be used with ggpairs 
+cor_func <- function(data, mapping, method, symbol, ...){
+  
+  # get mapping information from aes
+  x <- eval_data_col(data, mapping$x)
+  y <- eval_data_col(data, mapping$y)
+  
+  # calculate correlation
+  corr <- cor(x, y, method=method, use='complete.obs')
+  # set colour scale that is used for all correlations
+  colFn <- colorRampPalette(c("brown1", "white", "dodgerblue"), 
+                            interpolate ='spline')
+  
+  # get the index of the colour for the correlation observecd with the variable
+  fill <- colFn(100)[findInterval(corr, seq(-1, 1, length = 100))]
+  
+  # generate text plot with rounded correlation
+  ggally_text(
+    label = paste(symbol, as.character(round(corr, 2))), 
+    mapping = aes(),
+    xP = 0.5, yP = 0.5,
+    color = 'black',
+    ...
+  ) +
+    # plot the background panel using the correlation colour in fill
+    theme(panel.background = element_rect(fill = fill))
+}
+
+## Plot pairs plots with ggpairs
+ggpairs(Boston, 
+        upper = list(continuous = wrap(cor_func, method = 'spearman', symbol = expression('\u03C1 ='))),
+        diag = list(continuous = function(data, mapping, ...) {ggally_densityDiag(data = data, mapping = mapping) + 
+                  theme(panel.background = element_blank())})) + 
+  theme(strip.background = element_rect(fill = "white"),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())
+
+```
+
+`nox` and `crim` seem to have highest positive correlation out of the variable pairs while `nox` and `dim` seem to have the highest positive correlation. Distributions of the values of variable pairs seem to vary greatly.
+
+## Setting up the data set for data analysis
+
+### Standardizing variables in the dataset
+
+If we want to perform clustering and related analysis we should standardize the data. We can use `stats::scale()` for this. With default settings is standardizes variable (creates Z-score) by subtracting the mean and dividing by the standard deviation.
+
+```{r, fig.height=10, fig.width=10}
+
+# center and standardize variables and transform the matrix into a dataframe
+boston_scaled <- scale(Boston) %>% as.data.frame()
+
+# summaries of the scaled variables
+summary(boston_scaled)
+
+```
+As we can see the mean value for each variable after standardization is now zero compared to the original summary which had varying means. Due to centering we also have negative values which the original data set did not have. 
+
+### Creating test and training datasets
+
+Next we will generate a categoriocal value out of crime rate by quantiles ("low", "med_low", "med_high", "high") and add "replace" the `crim` variable with it.
+```{r}
+# create a quantiles of crim
+bins <- quantile(boston_scaled$crim)
+
+# create a categorical variable 'crime'
+crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE, labels=c("low", "med_low", "med_high", "high"))
+
+# remove original crim from the dataset
+boston_scaled <- dplyr::select(boston_scaled, -crim) %>% 
+# add the new categorical value to scaled data
+  dplyr::mutate(crime=crime)
+```
+
+Now we set our train and test datasets by subsetting observations from the scaled Boston dataset. We will use 80% of the observations for training and 20% for testing.
+
+```{r}
+# number of rows in the Boston dataset 
+n <- nrow(boston_scaled)
+
+# set seed for reproducibility
+set.seed(123)
+# choose randomly 80% of the 
+ind <- sample(n,  size = n * 0.8)
+
+# create train set
+train <- boston_scaled[ind,]
+
+# create test set 
+test <- boston_scaled[-ind,]
+
+#save the correct classes from test data
+correct_classes<- test$crime
+
+#remove the crime variable from test data
+test<- dplyr::select(test, -crime)
+```
+
+## Performing linear discriminant analysis on the data
+
+### Linear discriminant analysis
+
+```{r}
+# linear discriminant analysis
+lda.fit <- lda(crime ~ ., data = train)
+
+# print the lda.fit object
+lda.fit
+```
+As we can see from the summary of the model proportions of the crime rate categories are quite equal in our training dataset. Percentage separations achieved by the discriminant functions however are quite different: LD1 captures 95.23% of differences between the groups, while LD2 and LD3 add 3.64 and 1.13 respectively.
+
+We can now plot LDA (bi)plot to see differences among the groups.
+
+```{r, fig.height=5, fig.width=5}
+# the function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes <- as.numeric(train$crime)
+
+# plot the lda results
+plot(lda.fit, col = classes, pch = classes, dimen = 2)
+lda.arrows(lda.fit, myscale = 1.5)
+```
+
+As we can see from the the arrows in the (bi)plot variable `rad` shows most discrimination (longest arrow) compared to the other factors with smaller influences. It also seems to be one of the major factors predictive of high crime rate.
+
+### Assessing predictiveness of the model
+
+Lets use our test dataset now to check how accurately our model can predict crime rate.
+```{r, fig.height=10, fig.width=10}
+
+# generate predictions using the test dataset
+lda.pred <- predict(lda.fit, newdata=test)
+
+#  cross tabulate the results with the crime categories
+table(correct= correct_classes, predicted= lda.pred$class)
+
+# get by column proportions of classifications to compare predictiveness of the model across the groups 
+table(correct= correct_classes, predicted= lda.pred$class) %>% prop.table(margin = 2)
+```
+As we can see from the tabulation the model predicts low and high crime rate quite accurately (77% and 93% correct predictions respectively) but is not as good in predicting medium low and high crime rates (47% and 54% correct predictions respectively).
+
+## Distance analysis of the variables
+
+### Performing Distance analysis
+
+Lets perform distance analysis analysis for the observations in the dataset. 
+
+As something that is totally extra to the exercise we will also plot a heatmap with the previously used crime rate quantiles as annotation so we can see if the distances are smaller between observations belonging to same crime rate categories!
+
+```{r, fig.height=5, fig.width=5}
+# reload boston
+data("Boston")
+
+# Z-score variables
+boston_scaled <- scale(Boston)
+
+# center and standardize variables
+dist.b <- dist(boston_scaled)
+
+# create a quantiles of crim
+bins <- quantile(boston_scaled[,"crim"])
+
+# create a character vector of colours based on the crime rate  
+crime <- cut(boston_scaled[,"crim"], breaks = bins, include.lowest = TRUE, labels=c("darkblue", "lightblue", "rosybrown", "brown")) %>% as.character()
+
+## lets also plot the distances as a heatmap for fun 
+library(gplots, quietly = T)
+heatmap.2(as.matrix(dist.b), trace="none", 
+          labRow = FALSE, labCol = FALSE,
+          ColSideColors=crime,
+          RowSideColors=crime)
+```
+
+As we can see from the heatmap high crime rate categories cluster together quite nicely (darker red colour -> R's "brown") and are quite distinct from the bulk of low and medium low groups which are also quite similar to each other (blue colours).
+
+### Performing and optimizing K-means clustering
+
+Based on the distance heatmap above we could try starting of the K-means clustering using 3-4 centers. We'll use 3 for starters.
+```{r}
+
+# Calculate clusters using K means
+km <-kmeans(boston_scaled, centers = 3)
+
+# Print the centers
+km$centers
+```
+Our clusters have somewhat distinct means of values but we could optimize our clustering by performing, deviating from the DataCamp exercise, Gap-statistic based goodness of clustering measure which is more closely explained [here](https://stat.ethz.ch/R-manual/R-devel/library/cluster/html/clusGap.html). Gap statistic is more thoroughly explained [here](https://web.stanford.edu/~hastie/Papers/gap.pdf). Simply put, Gap statistic can be used to choose the number of k, where the biggest jump in within-cluster distance has occurred, based on the overall behavior of uniformly drawn samples\*.
+
+One of the main reasons I chose to use gap statistic instead of the within-cluster sum of square (WCSS), that was used in the Datacamp exercise, is that we can decide k (number of clusters) by not being reliant on an interpretation of a graph, but rather an outcome of a equation. In this case we will use the 1-SE rule which looks for the smallest k such that its value f(k) is not more than 1 standard error away from the first local maximum.
+
+Lets perform the analysis and plot gap-statistic with 
+
+\*[Towards Data Science blog post on K-mean and gap-statistic, 28.11.2021](https://towardsdatascience.com/k-means-clustering-and-the-gap-statistics-4c5d414acd29)
+
+```{r, fig.height=5, fig.width=5}
+
+library(cluster)
+# perform gap-statistic analysis on the dataset, running 1000 bootstraps
+# set seed for bootstrapping reproducibility
+set.seed(123)
+t.km <- clusGap(boston_scaled, kmeans, 20, B = 1000, iter.max=50) 
+
+# output the number of clusters by 1-SE rule 
+k.n <- maxSE(t.km$Tab[,3], t.km$Tab[,4], method = "firstSEmax")
+
+# create a dataframe for plotting
+gs.df = data.frame(t.km$Tab, k=1:nrow(t.km$Tab))
+
+# plot with ggplot
+ggplot(gs.df, aes(k, gap)) + 
+  geom_line() + 
+  geom_vline(xintercept = k.n) +
+  geom_point() + 
+  geom_errorbar(aes(ymax=gap+SE.sim, ymin=gap-SE.sim)) + 
+  theme_bw(12)
+    
+```
+The optimal amount of clusters is defined as 10 by the analysis.
+
+### Visualizing the results
+
+We will now plot a pairs plot to see how these clusters are represented among variable pairs.
+```{r, fig.height=10, fig.width=10}
+# Calculate clusters using K means with optimal n
+km.res <-kmeans(boston_scaled, centers = k.n)
+
+# create vector of clusters
+clusters <- km.res$cluster
+
+# generate a variable for cluster
+to.plot <- boston_scaled %>% as.data.frame() %>% mutate(cluster=paste("cl", clusters, sep = "_"))
+
+# take other variables than cluster for plotting 
+v.to.plot <- colnames(to.plot)[colnames(to.plot)!="cluster"]
+
+# plot pairs plot
+ggpairs(to.plot,
+        # set variables to plot
+        columns = v.to.plot, 
+        # set colour mapping to clusters annoyingly alpha also plots to legend and did not quickly figure out how to remove it without setting up errors...
+        aes(colour=cluster, alpha=0.8), 
+        # plot legend in first slot
+        legend = 1,
+        # change the upper plot to points as well
+        upper=list(continuous = "points", combo = "facethist", discrete = "facetbar", na ="na")) + 
+  # move legend to bottom
+  theme(legend.position = "bottom") 
+```
+
+The plot is quite colorful with 10 clusters indeed but there are noticeable things here still. When we look at the different density plots in the middle (while it is quite hard to look at...) we can see that in the different variable value distributions the clusters separate the observations quite nicely. For example with `zn` and `indus` separation of the "cl_8" and "cl_9" clusters differs. In the paired variable point plots we can see, for example, for `black` the separation of "cl_1" and "cl_3" from the others and for `zn` the separation of the "cl_6". This visualization might not be the best but will suffice this time...
+
+```{r}
+date()
+```

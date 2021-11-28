@@ -36,3 +36,51 @@ mutate_ex3 <- function(df,vars,ext) {
   }
   return(tmp)
 }
+
+## Colouring function taken from here: https://stackoverflow.com/questions/57450913/removing-background-color-for-column-labels-while-keeping-plot-background-color
+# Defines function to color according to correlation
+cor_func <- function(data, mapping, method, symbol, ...){
+  x <- eval_data_col(data, mapping$x)
+  y <- eval_data_col(data, mapping$y)
+  
+  corr <- cor(x, y, method=method, use='complete.obs')
+  colFn <- colorRampPalette(c("brown1", "white", "dodgerblue"), 
+                            interpolate ='spline')
+  fill <- colFn(100)[findInterval(corr, seq(-1, 1, length = 100))]
+  
+  ggally_text(
+    label = paste(symbol, as.character(round(corr, 2))), 
+    mapping = aes(),
+    xP = 0.5, yP = 0.5,
+    color = 'black',
+    ...
+  ) + #removed theme_void()
+    theme(panel.background = element_rect(fill = fill))
+}
+
+## Another function for better geom points apparently some variables have non-zero variance so cant use this...
+ggally_dens2DPointsViridis <- function(data, mapping, N=100, ...){
+  
+  require(viridis)
+  
+  ## function for calculating density
+  get_density <- function(x, y, n ) {
+    dens <- MASS::kde2d(x = x, y = y, n = n)
+    i_x <- findInterval(x, dens$x)
+    i_y <- findInterval(y, dens$y)
+    i <- cbind(i_x, i_y)
+    return(dens$z[i])
+  }
+  
+  ## get columns from mapping (ggplot mapping)
+  map_y <- eval_data_col(data, mapping$y)
+  map_x <- eval_data_col(data, mapping$x)
+  
+  ## calculate density
+  data$density <- get_density(x=map_x, y=map_y, n=N)
+  
+  p <- ggplot(data, mapping) +
+    geom_point(aes(colour=density), ...) +
+    scale_color_viridis()      
+  p
+}
