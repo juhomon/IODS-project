@@ -1,0 +1,178 @@
+## Loading packages for easier data wrangling and plotting
+
+For the following steps which include plotting, we are going to use some functions in following packages:
+
+```{r, message=FALSE, warning=F}
+library(GGally) ## plotting
+library(ggpubr) ## package which contains ggplot2 + useful tools
+library(ggfortify) ## for easier PCA plotting
+library(tidyverse) ## wrangling
+library(FactoMineR) ## analysis
+library(factoextra) ## visualization tools for clustering etc.
+```
+## General features of the dataset
+
+### Overview of the variables
+The dataset for this weeks exercise originates from United Nations Development Programme.
+
+```{r}
+# load data
+human <- read.delim("Data/human.tsv", header = T, sep = "\t")
+# show structure 
+str(human)
+# show summary
+summary(human)
+```
+The dataset has 155 observations and 8 variables. All of the variables are numeric and one of them more specifically integer. The scales of the values are varied, which is due to some of them being ratios of rations (_e.g._ `eduF2M`), some percentages (`parlRep`) etc.
+
+Here are the explanations for these variables:
+`GNIpc` = Gross National Income per capita
+`lifeExp` = Life expectancy at birth
+`edExp` = Expected years of schooling 
+`matMort` = Maternal mortality ratio
+`birthRate` = Adolescent birth rate
+`parlRep` = Percetange of female representatives in parliament
+`edu2F` = Proportion of females with at least secondary education
+`edu2M` = Proportion of males with at least secondary education
+`labF` = Proportion of females in the labour force
+`labM`  Proportion of males in the labour force
+`eduF2M` = `edu2F`/`edu2M`
+`labF2M` = `labF`/`labM`
+
+### Relationships between variables
+Now lets plot the already classic pairs plot to delve into the relationships between the variables.
+
+```{r, fig.height=8.5, fig.width=9, fig.cap="**Figure 1.** Overview of the variables in the human dataset"}
+# this functions creates correlation plots (colour scale for correlation and numeric representation) that can be used with ggpairs 
+cor_func <- function(data, mapping, method, symbol, ...){
+  
+  # get mapping information from aes
+  x <- eval_data_col(data, mapping$x)
+  y <- eval_data_col(data, mapping$y)
+  
+  # calculate correlation
+  corr <- cor(x, y, method=method, use='complete.obs')
+  # set colour scale that is used for all correlations
+  colFn <- colorRampPalette(c("brown1", "white", "dodgerblue"), 
+                            interpolate ='spline')
+  
+  # get the index of the colour for the correlation observed with the variable
+  fill <- colFn(100)[findInterval(corr, seq(-1, 1, length = 100))]
+  
+  # generate text plot with rounded correlation
+  ggally_text(
+    label = paste(symbol, as.character(round(corr, 2))), 
+    mapping = aes(),
+    xP = 0.5, yP = 0.5,
+    color = 'black',
+    ...
+  ) +
+    # plot the background panel using the correlation colour in fill
+    theme(panel.background = element_rect(fill = fill)) + 
+  theme(strip.background = element_rect(fill = "white"),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) 
+}
+# draw pairs plot
+ggpairs(human,upper = list(continuous = wrap(cor_func, method = 'spearman', symbol = expression('\u03C1 ='))))
+```
+As we can see from the from **Figure 1.** the variables have varying distributions among observations. For example, Gross National Income per capita (`GNIpc`) is mostly focused around 0 with six outlier(ish) observations quite separate from the rest (>500). Maternal mortality ratio (`matMort`) and life expectancy at birth (`lifeExp`) have strongest negative correlation while maternal mortality ratio and adolescent birth rate (`birthRate`) have strongest positive correlation among the variable pairs.
+
+## Principal component analysis 
+
+### Performinng PCA on unstandardized and standardized data
+
+Next we will perform Principal component analysis (PCA) on both unstandardized and standardized dataset to see how standardizing effects the interpretation of PCA results. It could be noted here that it is generally recommended to normalize data before PCA. 
+
+We'll do both of the plots in single code block for convenience and add some titles to the plots alongside the asked captioning with `fig.cap` in markdown.
+
+```{r, fig.height=5.5, fig.width=11, fig.cap="**Figure 2. A) PCA on unstandardized data.** Initial PCA analysis with unstandardized data hints that maternal mortality (`matMort`) could be one on the key segragating factors between the countries. **B) PCA on standardized data.** With standardization we can now more reliably see that there are several variables, such as life expenctancy (`lifeExp`) and adolescent birth rate (`birthRate`), that explain the divergence between countries."}
+
+## PCA without scaling
+pca.results <- prcomp(human, scale. = F)
+
+## plot with ggfortifys autoplot (more info here: https://cran.r-project.org/web/packages/ggfortify/vignettes/plot_pca.html)
+p1 <- autoplot(pca.results,
+         loadings = TRUE, loadings.colour = 'blue',
+         loadings.label = TRUE, loadings.label.size = 3) +
+  theme_bw(14) +
+  ggtitle("Unscaled PCA")
+
+## PCA with scaling
+pca.results.sc <- prcomp(human, scale. = T)
+
+## plot with ggfortifys autoplot
+p2 <- autoplot(pca.results.sc,
+         loadings = TRUE, loadings.colour = 'blue',
+         loadings.label = TRUE, loadings.label.size = 3) +
+  theme_bw(14) +
+  ggtitle("Scaled PCA")
+
+## combine pots
+ggarrange(p1, p2, align = "hv", labels = c("A", "B"))
+```
+### Interpreting the outcomes of PCA
+When we compare the unscaled (**Figure 2A**) and scaled data (**Figure 2B**) we can straight of see the importance of standardizing/scaling/normalization. With unscaled data, Gross National Income per capita (`GNIpc`) and maternal mortality ratio (`matMort`) which were both quite heavily skewed right in their distributions with higher values (**Figure 1**) are major drivers of explained variance in the dataset. This observation is due to the differences in scales of the values. For example, with variable `labF` (Proportion of females in the labor force) an unit change of 0.1 to 0.9 could clearly be viewed as significant change, but with `GNIpc` the same numeric change _e.g._ 300.1 to 300.9 is obviously of less impact and _vice versa_. When we scale the data we make the variables more comparable and thus can observe better the effects. In **Figure 2B** we can see that when the scale of the values is accounted for, there are several more variables explaining the observed variance. Life expectancy (`lifeExp`), maternal mortality ratio (`matMort`) and adolescent birth rate (`birthRate`) seem to be fairly connected with PC1 which explains lot more variance compared to PC2 (49.85% vs 16.43% respectively).
+
+## Multiple Correspondence Analysis on the tea data
+
+### Selecting variables for and performing MCA
+
+For Multiple Correspondence Analysis (MCA) step we will use `tea` dataset from `FactoMineR` R package. Some information from [here](https://rdrr.io/cran/FactoMineR/man/tea.html) about the data:
+
+>The data used here concern a questionnaire on tea. We asked to 300 individuals how they drink tea (18 questions), what are their product's perception (12 questions) and some personal details (4 questions).
+
+Lets do some summarization of the data using some basic commands.
+
+```{r}
+# load tea
+data("tea")
+# show structure 
+str(tea)
+# show summary
+summary(tea)
+```
+The dataset has 300 observations and 36 variables. 35 of these are categorical variables as factors and one of these is integer variable (`age`).
+
+When performing MCA it is good practice to leave out variables which have factors with next to none observations. Lets plot some bar plots and select 10 variables to use in the analysis.
+```{r, fig.height=11, fig.width=11, fig.cap="**Figure 3.** Box plots of the counts of different factors across the variables in `tea`."}
+# Draw summary in the form of bar plots
+gather(tea) %>% ggplot(aes(value)) + 
+  geom_bar() + 
+  facet_wrap("key", scales = "free") + 
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8) ,axis.title = element_blank()) ## tidy up
+```
+
+Lets just select some variables with not super-biased distributions seen in the barplots of **Figure 3.**, like `age_Q`, `breakfast`, `diuretic`, `escape.exoticism`, `exciting`, `feminine`, `frequency`, `SPC`, `tea.time` and `sugar`. 
+
+We'll do MCA and then plot the results using handy ggplot wrappers from `factoextra` R package. The plots that we are going to use are scree plot (overview of the inertia retained by the dimensions) and biplot with squared cosine (cos2) coloring of the variables. cos2 measures the degree of association between variable categories and a particular axis.
+
+```{r, fig.height=6, fig.width=11, fig.cap="**Figure 4. A)** Percentages of inertia explained MCA dimensions. **B)** MCA biplot of individuals and variable categories."}
+## selecting 10 variables that have reasonable counts across the categories
+vars2mca <- c("age_Q", "breakfast", "diuretic", "escape.exoticism", "exciting", "feminine", "frequency", "SPC", "tea.time", "sugar")
+
+## perform MCA on the selecteed variables
+res.mca <- MCA(tea[,vars2mca], graph = F)
+
+## using factoextra visualization functions generate some plot from MCA:
+## first a visualization of the percentages of variance explained by the different dimensions
+p1 <- fviz_screeplot(res.mca, addlabels = TRUE, ylim = c(0, 15))
+## Secondly, a biplot with individuals (without labels) and variables.
+p2 <- fviz_mca_biplot(res.mca, 
+                      label = "var",
+                      repel = TRUE,
+                      ggtheme = theme_minimal(),
+                      col.var = "cos2",
+                      gradient.cols = c("blue", "red"))
+
+## combine the plots with labeling
+ggarrange(p1, p2, labels = c("A", "B"), widths=c(1,1.8), ncol = 2)
+```
+### Interpreting the outcomes of MCA
+
+The variables that were selected are explaining only a small proportion of the variance among the observations in different dimensions. From the scree plot (**Figure 4A**) we can see that dimensions 1-10 at maximum are explaining roughly 10% of the observed variation. From the biplot (**Figure 4B**) we can see that student category of `SPC` and +60 category of `age_Q` both have high quality of representation (cos2) on both Dim1 and Dim2. 
+
+```{r} 
+date()
+``` 
