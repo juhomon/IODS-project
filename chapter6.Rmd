@@ -1,0 +1,217 @@
+## Setting up the contents for the exercise
+
+### Loading packages for easier data wrangling and plotting
+For the following steps which include plotting, we are going to use some functions in following packages:
+```{r, message=FALSE}
+library(GGally)
+library(ggpubr)
+library(tidyverse)
+library(lme4)
+```
+### Reading in the two data sets
+First the `BPRS` dataset which as described in Multivariate Analysis for the Behavioral Sciences text book\* contains data of 40 male subjects from two treatment groups which were assessed using brief psychiatric rating scale (BPRS) weekly for 8 weeks.
+```{r}
+# reading in 
+BPRS <- read.table("Data/BPRS.tsv", header = T) %>%
+  mutate_at(1:2, as.factor)  
+# view structure
+str(BPRS)
+```
+Second dataset for this exercise is `RATS` which contains weight information gathered from rats on three different diets over a 9-week period. Measurements were mainly taken on a weekly basis\*. 
+```{r}
+# reading in 
+RATS <- read.table("Data/RATS.tsv", header = T) %>%
+  mutate_at(1:2, as.factor)
+# view structure
+str(RATS)
+```
+*\*Vehkalahti, Kimmo & Everitt, Brian S. (2019). Multivariate Analysis for the Behavioral Sciences , Second Edition. Chapman and Hall/CRC, Boca Raton, Florida, USA.
+
+## Graphical displays and summary measure approach using RATS data
+
+### General features of the data
+Lets start by plotting the longitudal data with and without standardization.
+```{r, fig.height=6, fig.width=11, fig.cap="**Figure 1: A)** Weights by days of individual rats separated by groups **B)** Standardized weights by groups of mice"}
+# Draw the plot
+p1 <- ggplot(RATS, aes(x = Time, y = Weight, linetype = ID, color=Group)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:16, times=3)) +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(RATS$Weight), max(RATS$Weight))) + 
+  theme_bw(14) +
+  ylab("Weight (g)") +
+  theme(legend.position = "none")
+
+RATS.scaled <- RATS %>% 
+  group_by(Time) %>% 
+  mutate(std.weigth=(Weight-mean(Weight))/sd(Weight)) %>%
+  ungroup()
+
+p2 <- ggplot(RATS.scaled, aes(x = Time, y = std.weigth, linetype = ID, color=Group)) +
+  geom_line() +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "none") + 
+  scale_y_continuous(limits = c(min(RATS.scaled$std.weigth), max(RATS.scaled$std.weigth))) + 
+  theme_bw(14) +
+  ylab("Standardized weight (g)") +
+  theme(legend.position = "none")
+
+ggarrange(p1,p2, labels = "AUTO")
+```
+Based **Figure 1A** we could boldly assume that the rats are gaining weight on the diets (esp. groups 2&3). There seems to be some differences among the weight gain however on different diets. From **Figure 1B** we can see that while there are some instances were "tracking" seems to be evident there are many cases against it also . Also, group two seems to have a quite large specimen compared to the peers!
+
+### Summary measures for BPRS
+Lets delve deeper into the data. Making observations based on plots consisting of individuals is of ten misleading so we'll summarize the data bit.
+```{r, message=FALSE, fig.height=4, fig.width=11, fig.cap="**Figure 2: A)** Group means with standard errors across the time points **B)** Means of individuals off timepoints by group"}
+# Summary data with mean and standard error of bprs by treatment and week 
+RATS.SE <- RATS %>%
+  group_by(Group, Time) %>%
+  summarise(mean = mean(Weight), se = sd(Weight)/sqrt(16)) %>% # 16 here is the amount of individuals per groups
+  ungroup()
+
+# Plot the mean profiles
+p1 <- ggplot(RATS.SE, aes(x = Time, y = mean, colour=Group)) +
+  geom_line() +
+  geom_point(size=3) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se), width=0.3) +
+  scale_y_continuous(name = "mean(Weight) +/- se(Weight)") + 
+  theme_bw()
+
+# Create a summary data by treatment and subject with mean as the summary variable (ignoring baseline week 0).
+RATS.scaled.gr <- RATS %>%
+  dplyr::filter(Time>1) %>%
+  group_by(Group, ID) %>%
+  summarise(scaled.mean=mean(Weight)) %>%
+  ungroup()
+
+p2 <- ggplot(RATS.scaled.gr, aes(x = Group, y = scaled.mean, fill=Group)) +
+  geom_boxplot() +
+  facet_grid(.~Group, scales = "free_x", labeller = label_both) + 
+  stat_summary(fun = "mean", geom = "point", shape=23, size=4) +
+  scale_y_continuous(name = "mean(Weight), days 1-64") +
+  theme_bw(12) + 
+  theme(legend.position = "none")
+
+# Combine plots
+ggarrange(p1,p2, labels = "AUTO", widths = c(2,1), nrow = 1)
+```
+From **Figure 2A** we can see that standard error in group two is far greater than that of groups 1&3, this probably be due to the large individual highlighted in the **Figure 1 **. Using summary measure approach we can see that there are outlier-ish values across all of the groups. However, since it is generally advisable to leave outliers be unless they can be contributed to measurement error etc., we'll probably remove only the most deviating one (Group 2) and even that **just for practice**.
+
+### Testing for differences using summary measure approach
+Now we can perform some test for the data. First we'll remove the "outlier" and continue from there bny performin three-way anova and t-tests for group comparisons.
+```{r, fig.height=5, fig.width=6, fig.cap="**Figure 3:** Summary approach. P-values for T-test unless annotated differently" }
+# Create a new data by filtering the outlier 
+RATS.f <- RATS %>% 
+  dplyr::filter(Weight<550) %>% ## remove the one "outlier"
+  filter(Time > 1 ) %>% # remove baseline
+  group_by(Group, WD) %>%
+  summarise( mean = mean(Weight) )%>%
+  ungroup()
+
+comps <- list( c("1", "2"), c("1", "3"), c("2", "3") )
+
+ggplot(RATS.f, aes(x = Group, y = mean, fill=Group)) +
+  geom_boxplot() +
+  stat_compare_means(method = "t.test", comparisons = comps) +
+  stat_compare_means(label.y = 615, method = "anova") + 
+  scale_y_continuous(name = "mean(Weight), days 1-64") +
+  theme_bw(12) + 
+  theme(legend.position = "none")
+
+```
+Every groups between each other and in pairwise comparisons are significantly different it seems
+ 
+## Linear mixed effects models for BPRS data
+
+### A glimpse into the data set
+Lets start by taking a quick look at the data and misleadingly not with `glimpse` (terrible pun(?)) but by plotting BPRS's of the different subjects band treatments treatments.
+```{r, fig.height=5, fig.width=6, fig.cap="**Figure 4:** Plot of the time series data" }
+# Plot the BPRS data
+ggplot(BPRS, aes(x = week, y = bprs, colour = treatment, linetype=subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  scale_x_continuous(name = "Week") +
+  scale_y_continuous(name = "BPRS") +
+  theme_pubr()
+```
+From **Figure 4** we can see that there is a general decline in BPR score during the treatment period, but it is quite hard to see whether there are differences between the groups from this plot.
+
+### Fitting linear model 
+To gain better understanding of how treatment and time relate to BRPS lets fit a linear model using `week` and `treatment` as explanatory variables for `brps`.
+```{r}
+# create a regression model RATS_reg
+bprs_reg <- lm(bprs ~ week + treatment,BPRS)
+
+# print out a summary of the model
+summary(bprs_reg)
+```
+From the model we can see that `week` is (really highly) significant variable in the model and contributes to lower BRPS (estimate ~-2.3), thus based on this model, which assumes independence of measurements for BRPS, treatment time decreases BRPS. Based on R-squared the model explains only 18.5% of the variability. We can quite safely assume that the measurements are not independent from one another so lets keep on modelling.
+
+### Fitting a random intercept model
+A better model to study the effects could be random intercept model which allows the linear regression fit for each subject to differ in intercept from the other subjects. Lets generate the model.
+```{r}
+# Create a random intercept model
+bprs_ref <- lmer(bprs ~ week + treatment + (1 | subject), data = BPRS, REML = FALSE)
+
+# Print the summary of the model
+summary(bprs_ref)
+```
+This model also suggest `week` (time to be important variable).
+### Fitting a random slope model
+Now lets move on to random slope model which helps us to analyse BRPS profiles with time when We can using this and the previous (random intercept model) account for the individual differences in BRPS score by function of time.
+```{r}
+# create a random intercept and random slope model
+bprs_ref1 <- lmer(bprs ~ week + treatment + (week | subject), data = BPRS, REML = FALSE)
+
+# print a summary of the model
+summary(bprs_ref1)
+```
+There are some differences in the model and `week` is negatively correlated with BRPS. 
+
+Lets perform ANOVA to see if one fit is better another.
+```{r}
+# perform an ANOVA test on the two models
+anova(bprs_ref1, bprs_ref)
+```
+P-value is small (0.026) so interaction model provides better fit for treatment BRPS assessment. However the AIC values are very similar.
+
+### Plotting the slope and intercept model
+Lets combine the two approached and test wether we can achieve better results with it.
+```{r}
+# create a random intercept and random slope model with the interaction
+bprs_ref2 <-  lmer(bprs ~ week * treatment + (week | subject), data = BPRS, REML = FALSE)
+# perform an ANOVA test on the two models
+anova(bprs_ref2, bprs_ref1)
+```
+the new and improved model is not that improved. It's scraping the edge of significance with the P-value but ultimately falls sort which means it is not and upgrade. However, lets still use it to plot some fitted values.
+
+```{r, fig.height=7, fig.width=11, fig.cap="**Figure 5: A)** Base values **B)** Fitted values"}
+# draw the plot of RATSL with the observed Weight values
+p1 <- ggplot(BPRS, aes(x = week, y = bprs, colour=treatment)) +
+  geom_line(aes(linetype = subject)) +
+  scale_linetype_manual(values = rep(1:20, times=2)) +
+  scale_x_continuous(name = "Weeks") +
+  scale_y_continuous(name = "BRPS") +
+  theme(legend.position = "top") +
+  theme_bw(12)
+
+# Create a vector of the fitted values
+Fitted <- fitted(bprs_ref2)
+
+# Create a new column fitted to RATSL
+BPRS$fitted <- Fitted
+
+# draw the plot of RATSL with the Fitted values of weight
+p2 <- ggplot(BPRS, aes(x = week, y = fitted, colour=treatment)) +
+  geom_line(aes(linetype = subject)) +
+  scale_linetype_manual(values = rep(1:20, times=2)) +
+  scale_x_continuous(name = "Weeks") +
+  scale_y_continuous(name = "BRPS") +
+  theme(legend.position = "top") +
+  theme_bw(12)
+
+# Combine plots
+ggarrange(p1,p2, labels = "AUTO", widths = c(1,1), nrow = 1)
+```
+When we compare **Figure 5A&B** we can see that the trends that we estimated by eye in this case held true. The values indeed predict the observed data and show that accros the treatment weeks both treatments decrease (or neither affects in anyway?) BRPS.
